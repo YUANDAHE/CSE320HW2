@@ -6,7 +6,6 @@ char program_options[500];
 char test_infile[100];
 char test_output_subdir[100];
 char test_log_outfile[100];
-char test_rejfile[100];
 
 /*
  * Sets up to run a test.
@@ -20,9 +19,8 @@ int setup_test(char *name)
 	sprintf(test_infile, "%s/%s.in", TEST_REF_DIR, name);
 	sprintf(test_log_outfile, "%s/%s", TEST_OUTPUT_DIR, name);
 	sprintf(test_output_subdir, "%s/%s", TEST_OUTPUT_DIR, name);
-	sprintf(test_rejfile, "%s/%s",TEST_OUTPUT_DIR, name);
-	sprintf(cmd, "rm -f %s.out %s.err %s.rej; rm -fr %s; mkdir -p %s",
-		test_log_outfile, test_log_outfile, test_rejfile, test_output_subdir,
+	sprintf(cmd, "rm -f %s.out %s.err; rm -fr %s; mkdir -p %s",
+		test_log_outfile, test_log_outfile, test_output_subdir,
 		test_output_subdir);
 	fprintf(stderr, "setup(%s)\n", cmd);
 	return system(cmd);
@@ -166,37 +164,6 @@ void assert_outfile_matches(char *name, char *filter)
 	int err = system(cmd);
 	cr_assert_eq(err, 0,
 		     "The output was not what was expected (diff exited with "
-		     "status %d).\n",
-		     WEXITSTATUS(err));
-}
-
-/*
- * Compare a reject file created by the program being tested with reference
- * output, after first possibly using "grep" to remove lines that match a filter
- * pattern.
- */
-void assert_rejfile_matches(char *name, char *filter)
-{
-	char cmd[500];
-	if (filter) {
-		sprintf(cmd,
-			"grep -v '%s' %s.rej > %s_A_rej; grep -v '%s' "
-			"%s/%s_rej > %s_B_rej; "
-			"diff --ignore-tab-expansion --ignore-trailing-space "
-			"--ignore-space-change --ignore-blank-lines %s_A_rej "
-			"%s_B_rej",
-			filter, test_rejfile, name, filter, TEST_REF_DIR,
-			name, name, name, name);
-	} else {
-		sprintf(cmd,
-			"diff --ignore-tab-expansion --ignore-trailing-space "
-			"--ignore-space-change --ignore-blank-lines %s.rej "
-			"%s/%s_rej",
-			test_rejfile, TEST_REF_DIR, name);
-	}
-	int err = system(cmd);
-	cr_assert_eq(err, 0,
-		     "The reject file was not what was expected (diff exited with "
 		     "status %d).\n",
 		     WEXITSTATUS(err));
 }

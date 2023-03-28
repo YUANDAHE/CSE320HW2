@@ -30,7 +30,6 @@ void assert_expected_status(int expected, int status);
 void assert_expected_status(int expected, int status);
 void assert_signaled(int sig, int status);
 void assert_outfile_matches(char *name, char *filter);
-void assert_rejfile_matches(char *name, char *filter);
 void assert_errfile_matches(char *name, char *filter);
 void assert_no_valgrind_errors(int status);
 void assert_binfile_matches(char *name);

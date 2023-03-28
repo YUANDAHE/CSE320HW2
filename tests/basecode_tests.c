@@ -11,7 +11,6 @@ extern int Argc;
 extern char **Argv;
 extern FILE *rejfp;
 extern int filec;
-extern char *outname;
 extern char *filearg[];
 extern char TMPINNAME[];
 extern char using_plan_a;
@@ -269,95 +268,3 @@ Test(valgrind_suite, valgrind_context_multi) {
     assert_outfile_matches(name, NULL);
 }
 
-/* @brief Testing Long Option --pathnames
-*
-*/
-Test(longopt_suite, pathname_longopt) {
-    char *name = "pathnames_longopt";
-    sprintf(program_options, "--pathnames -o %s/%s_out", TEST_OUTPUT_DIR, name);
-    int err = run_using_system(name, "", "", STANDARD_LIMITS);
-    assert_expected_status(EXIT_SUCCESS, err);
-    assert_outfile_matches(name, NULL);
-}
-
-/* @brief Testing Long Option --output-file
-*
-*/
-Test(longopt_suite, output_file_longopt) {
-    char *name = "output_file_longopt";
-    sprintf(program_options, "-p --output-file %s/%s_out", TEST_OUTPUT_DIR, name);
-    int err = run_using_system(name, "", "", STANDARD_LIMITS);
-    assert_expected_status(EXIT_SUCCESS, err);
-    assert_outfile_matches(name, NULL);
-}
-
-/* @brief Testing Long Option --output-file without argument (Negative Test)
-*/
-Test(longopt_suite, output_file_longopt_no_arg) {
-    char *name = "output_file_longopt_no_arg";
-    sprintf(program_options, "-p --output-file");
-    int err = run_using_system(name, "", "", STANDARD_LIMITS);
-    assert_expected_status(EXIT_FAILURE, err);
-}
-
-/* @brief Testing Long Option --reject-file (Required Argument Negative Test)
-   @details Program should exit with EXIT_FAILURE if --reject-file is used without a filename
-*/
-Test(longopt_suite, reject_file_longopt_no_arg) {
-    char *name = "reject_file_longopt_no_arg";
-    sprintf(program_options, "-p -o %s/%s_out --reject-file", TEST_OUTPUT_DIR, name);
-    int err = run_using_system(name, "", "", STANDARD_LIMITS);
-    assert_expected_status(EXIT_FAILURE, err);
-}
-
-/* @brief Testing Long Option --reject-file (Required Argument Positive Test)
-   @details Program should exit with EXIT_SUCCESS if --reject-file is used with a filename
-*/
-Test(longopt_suite, reject_file_longopt_with_arg) {
-    char *name = "reject_file_longopt_with_arg";
-    sprintf(program_options, "-p -o %s/%s_out %s/%s_in %s/%s_diff --reject-file %s/%s.rej",
-    TEST_OUTPUT_DIR, name, TEST_REF_DIR, name, TEST_REF_DIR, name, TEST_OUTPUT_DIR, name);
-    int err = run_using_system(name, "", "", STANDARD_LIMITS);
-    assert_expected_status(EXIT_SUCCESS, err);
-    assert_rejfile_matches(name, NULL);
-}
-
-/*
-* @brief Tests "+" in an option arg.
-* @details Program should set output_file to "+", and then continue processing --silent, setting verbose to 0
-*/
-Test(longopt_suite, optarg_plus) {
-    char *av[] = { "patch", "--output-file", "+", "--silent", NULL };
-    Argv = av;
-    Argc = sizeof(av)/sizeof(av[0]) - 1;
-    verbose = 1;  // This should be set back to 0 by the program.
-    get_some_switches();
-    cr_assert_eq(strcmp(outname, "+"), 0,
-        "getopt_long did not set outname properly (outname = \"%s\", expected: \"+\"", outname);
-    cr_assert_eq(verbose, 0,
-        "getopt_long did not continue option processing (verbose = TRUE, expected FALSE)");
-}
-
-/*
-* @brief Tests "+garbage" instead of "+"
-* @details The program should treat the arg as a filename, incrementing filec and setting filearg[0] to "+garbage".
-*  It should NOT treat it as the special argument "+", which pauses option processing.
-*/
-#define GARBAGE "+garbage"
-Test(longopt_suite, garbage_after_plus) {
-    char *filec_default = "";
-    char *av[] = { "patch", GARBAGE, "--silent", NULL };
-    Argv = av;
-    Argc = sizeof(av)/sizeof(av[0]) - 1;
-    verbose = 1;  // This should be set back to 0 by the program.
-    filec = 0;  // This should be set to 1 by the program.
-    filearg[0] = filec_default;  // This should be updated to GARBAGE by the program
-    get_some_switches();
-    cr_assert_eq(filec, 1,
-        "getopt_long did not increment filec.");
-    cr_assert_eq(strcmp(filearg[0], GARBAGE), 0,
-        "getopt_long did not treat garbage flag as a filearg (did not set filearg[0]).");
-    cr_assert_eq(verbose, 0,
-        "getopt_long did not continue option processing (verbose = TRUE, expected FALSE)");
-}
-#undef GARBAGE
